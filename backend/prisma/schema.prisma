@@ -1,0 +1,84 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model Coffee {
+  id          String     @id @default(uuid())
+  name        String
+  description String
+  price       Decimal    @db.Decimal(10, 2)
+  imageUrl    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  tags        CoffeeTag[]
+  cartItems   CartItem[]
+}
+
+model Tag {
+  id        String      @id @default(uuid())
+  name      String      @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  // Relacionamentos 
+  coffees   CoffeeTag[]
+}
+
+model CoffeeTag {
+  coffeeId  String 
+  coffee    Coffee    @relation(fields: [coffeeId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag       @relation(fields: [tagId], references: [id])
+
+  @@id([coffeeId, tagId])
+
+}
+
+model Cart {
+  id                String          @id @default(uuid())
+  userId            String?
+  status            Status          @default(aguardandoPagamento)
+  statusPayment     StatusPayment   @default(pendente)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  dataTimeCompleted DateTime
+  
+  items     CartItem[]
+}
+
+model CartItem {
+  id         String   @id @default(uuid())
+  quantity   Int
+  unitPrice  Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relacionamentos aqui
+  coffeeId  String  
+  coffee     Coffee   @relation(fields: [coffeeId], references: [id])
+  
+  cartId   String    @unique
+  cart     Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, coffeeId])
+}
+
+enum Status{
+  abandonado
+  aguardandoPagamento
+  finalizado
+}
+
+enum StatusPayment{
+  aprovado
+  analise
+  pendente
+  cancelado
+}
